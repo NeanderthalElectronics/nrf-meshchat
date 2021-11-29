@@ -203,10 +203,6 @@ static int bt_mesh_chat_cli_init(struct bt_mesh_model *model)
 				      sizeof(chat->buf));
 	chat->pub.msg = &chat->pub_msg;
 	chat->pub.update = bt_mesh_chat_cli_update_handler;
-	chat->pub.addr = 0xc000;
-
-	struct bt_mesh_elem *elem = bt_mesh_model_elem(model);
-	bt_mesh_cfg_mod_sub_add_vnd(0, model->pub->addr, elem->addr, 0xc000, model->vnd.id, model->vnd.company, 0);
 
 	return 0;
 }
