@@ -5,7 +5,6 @@
  */
 
 #include <bluetooth/mesh.h>
-#include <bluetooth/mesh/cfg_cli.h>
 #include "chat_cli.h"
 #include "mesh/net.h"
 #include "mesh/transport.h"

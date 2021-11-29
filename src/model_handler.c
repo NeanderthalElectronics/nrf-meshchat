@@ -8,6 +8,7 @@
 
 #include <bluetooth/bluetooth.h>
 #include <bluetooth/mesh/models.h>
+#include <bluetooth/mesh/cfg_cli.h>
 #include <dk_buttons_and_leds.h>
 
 #include <shell/shell.h>
@@ -159,21 +160,12 @@ static void handle_chat_start(struct bt_mesh_chat_cli *chat)
 
 	chat->pub.addr = 0xc000;
 	chat->pub.ttl = BT_MESH_TTL_DEFAULT;
-	chat->pub.retransmit = CONFIG_BT_MESH_RELAY_RETRANSMIT_COUNT;
-
-	struct bt_mesh_model *model = chat->model;
+	chat->model->groups[0] = 0xc000;
 
 	uint8_t status;
-	struct bt_mesh_elem *elem = bt_mesh_model_elem(model);
-	bt_mesh_cfg_mod_sub_add_vnd(0, elem->addr, elem->addr, 0xc000, model->vnd.id, model->vnd.company, &status);
-
-	printk("chat start\n");
-	printk("add_group status: %d\n", status);
-	printk("group addresses (%d):\n", sizeof(model->groups) / sizeof(uint16_t));
-	printk("  group 0 is address 0x%X\n", model->groups[0]);
-
-	model->groups[0] = 0xc000;
-	printk("  group 0 is address 0x%X\n", model->groups[0]);
+	uint8_t transmit;
+	struct bt_mesh_elem *elem = bt_mesh_model_elem(chat->model);
+	bt_mesh_cfg_relay_set(0, elem->addr, BT_MESH_RELAY_ENABLED, BT_MESH_TRANSMIT(CONFIG_BT_MESH_RELAY_RETRANSMIT_COUNT, CONFIG_BT_MESH_RELAY_RETRANSMIT_INTERVAL), &status, &transmit);
 }
 
 static void handle_chat_presence(struct bt_mesh_chat_cli *chat,
@@ -204,7 +196,6 @@ static void handle_chat_message(struct bt_mesh_chat_cli *chat,
 {
 	/* Don't print own messages. */
 	if (address_is_local(chat->model, ctx->addr)) {
-		shell_print(chat_shell, "<0x%04X>: printing anyway %s", ctx->addr, msg);
 		return;
 	}
 
@@ -295,12 +286,6 @@ static int cmd_message(const struct shell *shell, size_t argc, char *argv[])
 	if (err) {
 		LOG_WRN("Failed to send message: %d", err);
 	}
-
-	shell_print(
-		shell,
-		"pub addr: 0x%x, key: 0x%x, ttl: 0x%x, retransmit: 0x%x, period: 0x%x, period_start: 0x%x",
-		chat.pub.addr, chat.pub.key, chat.pub.ttl, chat.pub.retransmit, chat.pub.period, chat.pub.period_start
-	);
 
 	/* Print own messages in the chat. */
 	shell_print(shell, "<you>: %s", argv[1]);
