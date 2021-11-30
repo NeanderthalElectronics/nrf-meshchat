@@ -8,6 +8,7 @@
 
 #include <bluetooth/bluetooth.h>
 #include <bluetooth/mesh/models.h>
+#include <bluetooth/mesh/cfg_cli.h>
 #include <dk_buttons_and_leds.h>
 
 #include <shell/shell.h>
@@ -156,6 +157,15 @@ static void print_client_status(void);
 static void handle_chat_start(struct bt_mesh_chat_cli *chat)
 {
 	print_client_status();
+
+	chat->pub.addr = 0xc000;
+	chat->pub.ttl = BT_MESH_TTL_DEFAULT;
+	chat->model->groups[0] = 0xc000;
+
+	uint8_t status;
+	uint8_t transmit;
+	struct bt_mesh_elem *elem = bt_mesh_model_elem(chat->model);
+	bt_mesh_cfg_relay_set(0, elem->addr, BT_MESH_RELAY_ENABLED, BT_MESH_TRANSMIT(CONFIG_BT_MESH_RELAY_RETRANSMIT_COUNT, CONFIG_BT_MESH_RELAY_RETRANSMIT_INTERVAL), &status, &transmit);
 }
 
 static void handle_chat_presence(struct bt_mesh_chat_cli *chat,
@@ -186,7 +196,6 @@ static void handle_chat_message(struct bt_mesh_chat_cli *chat,
 {
 	/* Don't print own messages. */
 	if (address_is_local(chat->model, ctx->addr)) {
-		shell_print(chat_shell, "<0x%04X>: printing anyway %s", ctx->addr, msg);
 		return;
 	}
 
